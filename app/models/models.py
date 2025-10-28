@@ -5,6 +5,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import insert
 from ..core.config import DATABASE_URL
+from ..core.logging_conf import configure_logging
 
 log = logging.getLogger(__name__)
 
@@ -47,6 +48,7 @@ Index("ix_listings_product", listings.c.product_id)
 
 
 def init_db():
+    configure_logging()
     engine = create_engine(DATABASE_URL, future=True)
     metadata.create_all(engine)
     log.info("Tables created.")

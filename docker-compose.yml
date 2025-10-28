@@ -28,6 +28,7 @@ services:
     volumes:
       - ./logs:/app/logs
       - ./data:/app/data
+    command: python -m app.cli initdb
     restart: on-failure
 
 volumes:
