@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 
 metadata = MetaData()
 
-#Tablas (productos, tiendas y listas)
+# Tabla que almacena los productos (id y título)
 products = Table(
     "products",
     metadata,
@@ -21,20 +21,13 @@ products = Table(
     Column("updated_at", DateTime, server_default=text("CURRENT_TIMESTAMP"), nullable=False),
 )
 
-stores = Table(
-    "stores",
-    metadata,
-    Column("store_id", Integer, primary_key=True),
-    Column("name", String, nullable=False), 
-    Column("created_at", DateTime, server_default=text("CURRENT_TIMESTAMP"), nullable=False),
-    Column("updated_at", DateTime, server_default=text("CURRENT_TIMESTAMP"), nullable=False),
-)
-
+# Tabla que almacena la relación de productos con tiendas (store_id) y precios.
+#RECUERDA: un producto puede estar en varias tiendas
 listings = Table(
     "listings",
     metadata,
     Column("product_id", Integer, ForeignKey("products.product_id", ondelete="CASCADE"), nullable=False),
-    Column("store_id", Integer, ForeignKey("stores.store_id", ondelete="CASCADE"), nullable=False),
+    Column("store_id", Integer, nullable=False),
     Column("title", String, nullable=False),          
     Column("price", Numeric, nullable=False),   
     Column("created_at", DateTime, server_default=text("CURRENT_TIMESTAMP"), nullable=False),

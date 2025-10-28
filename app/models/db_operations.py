@@ -3,8 +3,9 @@ from sqlalchemy import (
     ForeignKey, Index
 )
 from sqlalchemy.dialects.postgresql import insert
-from .models import products, stores, listings
+from .models import products, listings
 
+#Insertar o actualizar producto. Si existe, actualizar sus datos
 def insert_or_update_product(conn, product_id: int, title: str):
     stmt = insert(products).values(
         product_id=product_id,
@@ -18,19 +19,7 @@ def insert_or_update_product(conn, product_id: int, title: str):
     )
     conn.execute(stmt)
 
-def insert_or_update_store(conn, store_id: int, name: str):
-    stmt = insert(stores).values(
-        store_id=store_id,
-        name=name,
-    ).on_conflict_do_update(
-        index_elements=[stores.c.store_id],
-        set_={
-            "name": stmt_excluded(stores, "name"),
-            "updated_at": text("CURRENT_TIMESTAMP"),
-        },
-    )
-    conn.execute(stmt)
-
+# Inserta o actualiza un producto en la tabla 'listings'. Si el producto ya está asociado con una tienda, se actualiza el precio, título y la fecha de actualización.
 def insert_or_update_listing(conn, item: dict):
     stmt = insert(listings).values(**item).on_conflict_do_update(
         index_elements=[listings.c.product_id, listings.c.store_id],
