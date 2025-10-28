@@ -6,3 +6,15 @@ __pycache__/
 
 env/
 venv/
+
+logs/
+*.log
+
+.env
+*.sqlite3
+
+pgdata/
+*.pid
+
+.vscode/
+.idea/
