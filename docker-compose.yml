@@ -22,13 +22,22 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql+psycopg2://catalog:catalog@postgres:5432/catalog        
-      FEED_PATH: data/feed_items.csv
-      PORTAL_PATH: data/portal_items.csv
+      DATABASE_URL:  ${DATABASE_URL}       
+      LOG_LEVEL: ${LOG_LEVEL}  
+      AUTO_RUN: ${AUTO_RUN}    
+      FEED_PATH: ${FEED_PATH}  
+      PORTAL_PATH: ${PORTAL_PATH} 
     volumes:
       - ./logs:/app/logs
       - ./data:/app/data
-    command: python -m app.cli initdb
+    command: >
+      bash -c "
+        python -m app.cli initdb &&
+        if [ \"$AUTO_RUN\" = 'true' ]; then
+          python -m app.cli import \"$FEED_PATH\"
+        fi &&
+        tail -f /dev/null
+      "
     restart: on-failure
 
 volumes:
