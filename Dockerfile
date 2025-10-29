@@ -11,4 +11,4 @@ COPY app/ app/
 COPY data/ data/
 COPY .env.example .env
 
-CMD ["python", "-m", "initdb"]
+CMD ["python", "-m","app.cli","initdb"]

@@ -41,5 +41,21 @@ services:
       "
     restart: on-failure
 
+  api:
+      build: .
+      depends_on:
+        postgres:
+          condition: service_healthy
+      environment:
+        DATABASE_URL: postgresql+psycopg2://catalog:catalog@postgres:5432/catalog
+        LOG_LEVEL: INFO
+      volumes:
+        - ./logs:/app/logs
+        - ./data:/app/data
+      ports:
+        - "8000:8000"
+      command: uvicorn app.api.api:app --host 0.0.0.0 --port 8000 --reload
+      restart: unless-stopped
+
 volumes:
   pgdata:
