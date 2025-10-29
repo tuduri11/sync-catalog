@@ -15,6 +15,7 @@ def main():
     p_syn = sub.add_parser("sync", help="Sync portal CSV")
     p_syn.add_argument("csv_path")
 
+    #Tres tipos de ejecución manual
     args = parser.parse_args()
     if args.cmd == "initdb":
         init_db()

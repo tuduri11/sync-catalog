@@ -21,8 +21,7 @@ products = Table(
     Column("updated_at", DateTime, server_default=text("CURRENT_TIMESTAMP"), nullable=False),
 )
 
-# Tabla que almacena la relación de productos con tiendas (store_id) y precios.
-#RECUERDA: un producto puede estar en varias tiendas
+# Tabla que almacena la relación de productos con tiendas (store_id) y precios. Un producto puede estar en varias tiendas
 listings = Table(
     "listings",
     metadata,

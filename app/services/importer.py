@@ -20,14 +20,14 @@ def import_feed(csv_path: str):
 
     try:
         with engine.begin() as conn:
-            #Para cada fila...
+            #Para cada fila del csv
             for fila in df.to_dict(orient="records"):
                 pid = int(fila["product_id"])
                 sid = int(fila["store_id"])
                 title = str(fila["title"])
                 price = float(fila["price"])
 
-                #Update/Insert todos 
+                #Update/Insert 
                 upsert_all(conn, pid, sid, title, price)
 
             # Reasignación de tiendas por producto

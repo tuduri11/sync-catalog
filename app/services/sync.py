@@ -44,6 +44,7 @@ def sync(csv_path):
                 if key not in listings:
                     insert_or_update_product(conn, pid, title)
                     insert_or_update_listing(conn, {"product_id": pid, "store_id": sid, "title": title, "price": price})
+                #Si existe, editamos precio/store si se tiene que editar
                 else:
                     db_r = listings[key]
                     if str(db_r["title"]) != title or float(db_r["price"]) != price:
