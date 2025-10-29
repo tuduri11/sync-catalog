@@ -12,18 +12,25 @@ log = logging.getLogger(__name__)
 #Insertar o actualizar producto. Si existe, actualizar sus datos
 def insert_or_update_product(conn, product_id, title):
     try:
-        stmt = insert(products).values(
-            product_id=product_id,
-            title=title,
-        ).on_conflict_do_update(
-            index_elements=[products.c.product_id],
-            set_={
-                "title": stmt_excluded(products, "title"),
-                "updated_at": text("CURRENT_TIMESTAMP"),
-            },
+        stmt = (
+            insert(products)
+            .values(
+                product_id=product_id,
+                title=title,
+            )
+            .on_conflict_do_update(
+                index_elements=[products.c.product_id],
+                set_={
+                    "title": stmt_excluded(products, "title"),
+                    "updated_at": text("CURRENT_TIMESTAMP"),
+                },
+            )
+            .returning(text("(xmax = 0) AS inserted"))
         )
-        result = conn.execute(stmt)
-        if result.inserted_primary_key:
+
+        row = conn.execute(stmt).one()
+        inserted = row.inserted 
+        if inserted:
             log.info(f"New product with product_id={product_id}, title: {title}")
         else:
             log.info(f"Updated product with product_id={product_id} updated, title: {title}")
@@ -69,7 +76,7 @@ def upsert_all(conn, pid, sid, title, price):
     insert_or_update_listing(conn, {"product_id": pid,"store_id": sid,"title": title,"price": price,})
 
 #Elimina la relación entre un producto y una tienda (store_id) de la base de datos.
-def remove_listing(conn, pid, sid):
+def delete_listing(conn, pid, sid):
     try:
         res = conn.execute(
             delete(listings)
@@ -124,25 +131,14 @@ def delete_products(conn,product_ids):
         raise
 
 #Se eliminan los listings de una lista y los productos si se quedan sin tiendas
-def delete_listings(conn, list):
+def delete_listings(conn, items):
     try:
-        if list:
-            for pid, sid in list:
-                res = conn.execute(
-                    delete(listings)
-                    .where(listings.c.product_id == pid)
-                    .where(listings.c.store_id == sid)
-                )
-                if res.rowcount > 0:
-                    log.info(f"Deleted listing for product_id={pid} and store_id={sid}.")
+        if items:
+            for pid, sid in items:
+                delete_listing(conn,pid,sid)
 
             #Si eliminamos TODOS los listings de un producto, eliminamos a ese producto:
-            orphan_products = conn.execute(
-                select(products.c.product_id)
-                .join(listings, listings.c.product_id == products.c.product_id, isouter=True)
-                .group_by(products.c.product_id)
-                .having(func.count(listings.c.product_id) == 0)
-            ).scalars().all()
+            orphan_products = get_products_without_stores(conn)
 
             if orphan_products:
                 delete_products(conn,orphan_products)
@@ -150,3 +146,11 @@ def delete_listings(conn, list):
     except Exception as e:
         log.error(f"Error deleting listings: {e}")
         raise
+
+def get_products_without_stores(conn):
+    return conn.execute(
+                select(products.c.product_id)
+                .join(listings, listings.c.product_id == products.c.product_id, isouter=True)
+                .group_by(products.c.product_id)
+                .having(func.count(listings.c.product_id) == 0)
+            ).scalars().all()
