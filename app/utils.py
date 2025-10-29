@@ -19,8 +19,13 @@ def read_csv(path: str):
     if missing_cols:
         raise ValueError(f"Missing required columns: {missing_cols}")
     
-    #Eliminar filas del CSV donde falta información
-    df = df.dropna(how='any')
+
+    # Detectar filas con datos faltantes y eliminar filas incompleta
+    null_rows = df[df.isna().any(axis=1)]
+    if not null_rows.empty:
+        for i, row in null_rows.iterrows():
+            log.warning("Dropped row because of NaN %d: %s", i, row.to_dict())
+    df = df.dropna(how="any")
 
     # Normalizar datos CSV
     df["product_id"] = df["product_id"].astype(int)

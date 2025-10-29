@@ -24,11 +24,17 @@ def insert_or_update_product(conn, product_id, title):
                     "title": stmt_excluded(products, "title"),
                     "updated_at": text("CURRENT_TIMESTAMP"),
                 },
+                where=products.c.title.is_distinct_from(
+                    stmt_excluded(products, "title")
+                ),
             )
             .returning(text("(xmax = 0) AS inserted"))
         )
 
-        row = conn.execute(stmt).one()
+        row = conn.execute(stmt).fetchone()
+        if row is None:
+            return
+        
         inserted = row.inserted 
         if inserted:
             log.info(f"New product with product_id={product_id}, title: {title}")
@@ -49,14 +55,24 @@ def insert_or_update_listing(conn, item: dict):
                 "price": stmt_excluded(listings, "price"),
                 "updated_at": text("CURRENT_TIMESTAMP"),
             },
-        )
-        result = conn.execute(stmt)
-        if result.rowcount > 0:
-            if result.inserted_primary_key: 
-                log.info(f"Listing inserted for product_id={item['product_id']} and store_id={item['store_id']}. Price: {item['price']}")
-            else:  
-                log.info(f"Listing updated for product_id={item['product_id']} and store_id={item['store_id']}. Price: {item['price']}")
-    
+            where=(
+                    listings.c.title.is_distinct_from(stmt_excluded(listings, "title"))
+                    | listings.c.price.is_distinct_from(stmt_excluded(listings, "price"))
+                ),
+        ).returning(
+                text("(xmax = 0) AS inserted"))
+        
+        row = conn.execute(stmt).fetchone()
+        if row is None:
+            return
+        inserted = row.inserted 
+
+
+        if inserted: 
+            log.info(f"Listing inserted for product_id={item['product_id']} and store_id={item['store_id']}. Price: {item['price']}")
+        else:  
+            log.info(f"Listing updated for product_id={item['product_id']} and store_id={item['store_id']}. Price: {item['price']}")
+
     except Exception as e:
         log.error(f"Error inserting or updating listing for product_id={item['product_id']} and store_id={item['store_id']}: {e}")
         raise 
