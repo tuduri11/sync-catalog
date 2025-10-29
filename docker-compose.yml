@@ -34,7 +34,8 @@ services:
       bash -c "
         python -m app.cli initdb &&
         if [ \"$AUTO_RUN\" = 'true' ]; then
-          python -m app.cli import \"$FEED_PATH\"
+          python -m app.cli import \"$FEED_PATH\" &&
+          python -m app.cli sync \"$PORTAL_PATH\";
         fi &&
         tail -f /dev/null
       "
