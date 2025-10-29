@@ -2,7 +2,7 @@
 
 Este proyecto implementa un sistema completo para importar, validar y sincronizar catálogos de productos a partir de feeds CSV, almacenarlos en una base de datos PostgreSQL y exponer una API REST para consultar los datos.
 
-## Características principales
+### Características principales
 
 - Procesamiento y validación de archivos CSV.
 - Sincronización automática de productos:
@@ -16,7 +16,7 @@ Este proyecto implementa un sistema completo para importar, validar y sincroniza
 - CLI para ejecución manual de procesos.
 
 
-## Tecnologías utilizadas
+### Tecnologías utilizadas
 
 - Python 3.11
 - FastAPI
@@ -34,16 +34,22 @@ Este proyecto implementa un sistema completo para importar, validar y sincroniza
 ### Configuración e instalación
 
 1. Clonar repositorio:
-- git clone https://github.com/tu-usuario/sync-catalog.git
-- cd sync-catalog
+```
+git clone https://github.com/tu-usuario/sync-catalog.git
+cd sync-catalog
+```
 
 2. Copiar el archivo de entorno:
-- cp .env.example .env
+```
+cp .env.example .env
+```
 
 **MUY IMPORTANTE**: Si no se desea la ejecución automática de los dos ejercicios, en ".env", cambiar AUTO_RUN a false.
 
 3. Construir e iniciar el sistema:
-- docker compose up --build
+```
+docker compose up --build
+```
 
 Esto levantará tres contenedores:
 
@@ -111,52 +117,53 @@ Todos los eventos de importación, sincronización y API se registran en: logs/a
 
 ### ESTRUCTURA DEL PROYECTO
 
+```
 sync-catalog/
 ├── app/
-│ ├── api/
-│ │ └── api.py → Definición de la API REST con FastAPI (endpoints principales).
-│ │
-│ ├── core/
-│ │ ├── config.py → Configuración general de la aplicación
-│ │ ├── db.py → Conexión y sesión con la base de datos PostgreSQL.
-│ │ └── logging_conf.py → Configuración de logging del sistema.
-│ │
-│ ├── models/
-│ │ ├── db_operations.py → Funciones de persistencia y consultas a la base de datos.
-│ │ └── models.py → Definición de modelos ORM (tablas products, listings).
-│ │
-│ ├── services/
-│ │ ├── importer.py → Ejercicio 1
-│ │ └── sync.py → Ejercicio 2
-│ │
-│ ├── cli.py → CLI para ejecutar comandos (initdb, import, sync).
-│ └── utils.py → Funciones auxiliares
+│   ├── api/
+│   │   └── api.py               → Definición de la API REST con FastAPI (endpoints principales)
+│   │
+│   ├── core/
+│   │   ├── config.py            → Configuración general de la aplicación
+│   │   ├── db.py                → Conexión y sesión con la base de datos PostgreSQL
+│   │   └── logging_conf.py      → Configuración de logging del sistema
+│   │
+│   ├── models/
+│   │   ├── db_operations.py    → Funciones de persistencia y consultas a la base de datos
+│   │   └── models.py            → Definición de modelos ORM (tablas `products`, `listings`)
+│   │
+│   ├── services/
+│   │   ├── importer.py         → Ejercicio 1
+│   │   └── sync.py             → Ejercicio 2
+│   │
+│   ├── cli.py                  → CLI para ejecutar comandos (`initdb`, `import`, `sync`)
+│   └── utils.py                → Funciones auxiliares
 │
 ├── data/
-│ ├── feed_items.csv → Archivo CSV de productos del feed.
-│ └── portal_items.csv → Archivo CSV simulado del portal externo.
+│   ├── feed_items.csv          → Archivo CSV de productos del feed
+│   └── portal_items.csv        → Archivo CSV simulado del portal externo
 │
 ├── logs/
-│ └── app.log → Archivo de registro de eventos y operaciones.
+│   └── app.log                 → Archivo de registro de eventos y operaciones
 │
-├── docker-compose.yml → Orquestación de servicios Docker (DB, app, API).
-├── Dockerfile → Imagen base de la aplicación (Python + dependencias).
-├── README.md → Documentación principal del proyecto.
-└── requirements.txt → Dependencias del entorno Python.
+├── docker-compose.yml          → Orquestación de servicios Docker (DB, app, API)
+├── Dockerfile                  → Imagen base de la aplicación (Python + dependencias)
+├── README.md                   → Documentación principal del proyecto
+└── requirements.txt            → Dependencias del entorno Python
 
+```
 
 ### EJEMPLOS DE EJECUCIÓN
 
 Cuando ejecutamos la importación del feed CSV (Ejercicio 1), tanto en la terminal como en el archivo de logs app.log, se registra el feedback de las operaciones realizadas sobre la base de datos. Aquí algunos ejemplos de mensajes de éxito que podrías ver:
 
-2025-10-29 08:52:19,304 | INFO | app.models.db_operations | Relation between product_id=2735 and store_id=3 deleted.
-2025-10-29 08:52:19,306 | INFO | app.models.db_operations | Deleted product with product_id=2735.
-2025-10-29 08:52:19,308 | INFO | app.models.db_operations | Listing updated for product_id=1084 and store_id=1. Price: 406.15
+2025-10-29 08:52:19,304 | INFO | app.models.db_operations | Relation between product_id=2735 and store_id=3 deleted. <br>
+2025-10-29 08:52:19,306 | INFO | app.models.db_operations | Deleted product with product_id=2735. <br>
+2025-10-29 08:52:19,308 | INFO | app.models.db_operations | Listing updated for product_id=1084 and store_id=1. Price: 406.15 <br>
 
 En caso de errores al intentar escribir o actualizar los datos en la base de datos, el sistema también los registra. Un error típico podría ser:
 
 2025-10-29 08:56:05,512 | ERROR | app.models.db_operations | Error inserting or updating product with product_id=A123: Invalid price format
-
 
 
 ###  AUTOR
