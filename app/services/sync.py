@@ -20,32 +20,37 @@ def sync(csv_path):
 
     portal_map = {(int(r.product_id), int(r.store_id)): r for r in df.itertuples()}
 
-    with engine.begin() as conn:
-        #Todas las listings de la BD
-        listings = get_listings(conn)
+    try:
+        with engine.begin() as conn:
+            #Todas las listings de la BD
+            listings = get_listings(conn)
 
-        db_pairs = set(listings.keys())
-        portal_pairs = set(portal_map.keys())
-        
-        # Eliminaciones
-        to_delete = db_pairs - portal_pairs
-        if to_delete:
-            delete_listings(conn,to_delete)
-
-
-        # Inserciones / Actualizaciones de la importación
-        for key, r in portal_map.items():
-            pid, sid = key
-            title = str(r.title)
-            price = float(r.price)
+            db_pairs = set(listings.keys())
+            portal_pairs = set(portal_map.keys())
             
-            # Si el producto no existe en la base de datos, lo insertamos
-            if key not in listings:
-                insert_or_update_product(conn, pid, title)
-                insert_or_update_listing(conn, {"product_id": pid, "store_id": sid, "title": title, "price": price})
-            else:
-                db_r = listings[key]
-                if str(db_r["title"]) != title or float(db_r["price"]) != price:
-                    insert_or_update_listing(conn, {"product_id": pid, "store_id": sid, "title": title, "price": price})
+            # Eliminaciones
+            to_delete = db_pairs - portal_pairs
+            if to_delete:
+                delete_listings(conn,to_delete)
 
-    log.info("Sync completed.")
+
+            # Inserciones / Actualizaciones de la importación
+            for key, r in portal_map.items():
+                pid, sid = key
+                title = str(r.title)
+                price = float(r.price)
+                
+                # Si el producto no existe en la base de datos, lo insertamos
+                if key not in listings:
+                    insert_or_update_product(conn, pid, title)
+                    insert_or_update_listing(conn, {"product_id": pid, "store_id": sid, "title": title, "price": price})
+                else:
+                    db_r = listings[key]
+                    if str(db_r["title"]) != title or float(db_r["price"]) != price:
+                        insert_or_update_listing(conn, {"product_id": pid, "store_id": sid, "title": title, "price": price})
+
+        log.info("Sync completed.")
+
+    except Exception as e:
+        log.error(f"Error during sync process: {e}")
+        raise
