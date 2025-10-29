@@ -13,6 +13,7 @@ Este proyecto implementa un sistema completo para importar, validar y sincroniza
 - Logging.
 - API REST con FastAPI.
 - Despliegue completo con Docker Compose.
+- CLI para ejecución manual de procesos.
 
 
 ## Tecnologías utilizadas
@@ -39,6 +40,8 @@ Este proyecto implementa un sistema completo para importar, validar y sincroniza
 2. Copiar el archivo de entorno:
 - cp .env.example .env
 
+**MUY IMPORTANTE**: Si no se desea la ejecución automática de los dos ejercicios, en ".env", cambiar AUTO_RUN a false.
+
 3. Construir e iniciar el sistema:
 - docker compose up --build
 
@@ -53,8 +56,11 @@ Esto levantará tres contenedores:
 
 Se realiza todo de manera automática. También es posible ejecutar cada fase de forma independiente usando la CLI interna (lo explico en el siguiente punto)
 
+Se puede ir viendo los cambios en la base de datos gracias al endpoint  http://localhost:8000/products
+
+
 ### Uso manual (CLI)
-El modo manual permite repetir procesos de importación o sincronización sin reiniciar los contenedores:
+El modo manual permite ejecutar los procesos de importación o sincronización sin reiniciar los contenedores:
 
 - Inicializar la base de datos: docker compose exec app python -m app.cli initdb
 - Importar feed CSV: docker compose exec app python -m app.cli import data/feed_items.csv
@@ -63,16 +69,14 @@ El modo manual permite repetir procesos de importación o sincronización sin re
 
 ### API REST
 Endpoints principales: 
-- GET	/products	Lista todos los productos con sus diferentes tiendas y precios
-
-Exemple: http://localhost:8000/products
+- GET	/products	Lista todos los productos con sus diferentes tiendas y precios : http://localhost:8000/products
 
 ### FLUJO DE TRABAJO: IMPORTACIÓN Y SINCRONIZACIÓN
 
 El sistema trabaja en dos fases principales, totalmente automatizadas (y también ejecutables manualmente mediante CLI).
 
 1. Importación del feed (importer.py):
-  - Leemos y validamos CSV (omitiendo filas inválidas)
+  - Leemos y validamos CSV (omitiendo filas inválidas o vacías)
   - Insertamos o actualizamos los productos en la base de datos.
   - Si el product_id ya existe, actualizamos title si ha cambiado.
   - Si el producto es nuevo, lo insertamos.
@@ -91,7 +95,7 @@ El sistema trabaja en dos fases principales, totalmente automatizadas (y tambié
 
 ### BASE DE DATOS
 - La base de datos está compuesta por dos tablas principales: products y listings:
-    - Products almacena la información global del producto (por ejemplo, el título). Representa el catálogo central de artículos, independientemente de las tiendas.
+    - Products almacena la información global del producto. Representa el catálogo central de artículos, independientemente de las tiendas.
     - Listings almacena la relación entre cada producto y las distintas tiendas (store_id), junto con el precio y los datos específicos de cada una.
 
 - De esta forma, un mismo producto puede aparecer en múltiples tiendas con precios o condiciones diferentes.
@@ -102,7 +106,57 @@ El sistema trabaja en dos fases principales, totalmente automatizadas (y tambié
 
 
 ### LOGS
-Todos los eventos de importación, sincronización y API se registran en: logs/app.log
+Todos los eventos de importación, sincronización y API se registran en: logs/app.log mediante el módulo logging de Python
+
+
+### ESTRUCTURA DEL PROYECTO
+
+sync-catalog/
+├── app/
+│ ├── api/
+│ │ └── api.py → Definición de la API REST con FastAPI (endpoints principales).
+│ │
+│ ├── core/
+│ │ ├── config.py → Configuración general de la aplicación
+│ │ ├── db.py → Conexión y sesión con la base de datos PostgreSQL.
+│ │ └── logging_conf.py → Configuración de logging del sistema.
+│ │
+│ ├── models/
+│ │ ├── db_operations.py → Funciones de persistencia y consultas a la base de datos.
+│ │ └── models.py → Definición de modelos ORM (tablas products, listings).
+│ │
+│ ├── services/
+│ │ ├── importer.py → Ejercicio 1
+│ │ └── sync.py → Ejercicio 2
+│ │
+│ ├── cli.py → CLI para ejecutar comandos (initdb, import, sync).
+│ └── utils.py → Funciones auxiliares
+│
+├── data/
+│ ├── feed_items.csv → Archivo CSV de productos del feed.
+│ └── portal_items.csv → Archivo CSV simulado del portal externo.
+│
+├── logs/
+│ └── app.log → Archivo de registro de eventos y operaciones.
+│
+├── docker-compose.yml → Orquestación de servicios Docker (DB, app, API).
+├── Dockerfile → Imagen base de la aplicación (Python + dependencias).
+├── README.md → Documentación principal del proyecto.
+└── requirements.txt → Dependencias del entorno Python.
+
+
+### EJEMPLOS DE EJECUCIÓN
+
+Cuando ejecutamos la importación del feed CSV (Ejercicio 1), tanto en la terminal como en el archivo de logs app.log, se registra el feedback de las operaciones realizadas sobre la base de datos. Aquí algunos ejemplos de mensajes de éxito que podrías ver:
+
+2025-10-29 08:52:19,304 | INFO | app.models.db_operations | Relation between product_id=2735 and store_id=3 deleted.
+2025-10-29 08:52:19,306 | INFO | app.models.db_operations | Deleted product with product_id=2735.
+2025-10-29 08:52:19,308 | INFO | app.models.db_operations | Listing updated for product_id=1084 and store_id=1. Price: 406.15
+
+En caso de errores al intentar escribir o actualizar los datos en la base de datos, el sistema también los registra. Un error típico podría ser:
+
+2025-10-29 08:56:05,512 | ERROR | app.models.db_operations | Error inserting or updating product with product_id=A123: Invalid price format
+
 
 
 ###  AUTOR
